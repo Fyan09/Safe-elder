@@ -7,6 +7,7 @@ class Artikel {
   final String kategori;
   final DateTime tanggalPublish;
   final bool isFeatured;
+  final String? imageUrl;
 
   Artikel({
     required this.id,
@@ -17,5 +18,6 @@ class Artikel {
     required this.kategori,
     required this.tanggalPublish,
     this.isFeatured = false,
+    this.imageUrl,
   });
 }
