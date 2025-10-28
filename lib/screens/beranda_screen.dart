@@ -7,10 +7,12 @@ import '../widgets/latihan_card.dart';
 import '../services/obat_service.dart';
 import '../services/latihan_service.dart';
 import '../services/artikel_service.dart';
+import 'fall_detection_service.dart';
 import 'lokasi_screen.dart';
 import 'obat_screen.dart';
 import 'latihan_screen.dart';
 import 'artikel_screen.dart';
+import 'package:intl/intl.dart';
 
 class BerandaScreen extends StatefulWidget {
   const BerandaScreen({super.key});
@@ -98,17 +100,103 @@ class _BerandaContentState extends State<_BerandaContent> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Alert Deteksi Jatuh
-                AlertCard(
-                  title: 'Deteksi Jatuh!',
-                  subtitle: 'Terdeteksi Jatuh di Kamar Mandi pada 14:30 WIB',
-                  buttonText: 'Periksa Lokasi',
-                  onPressed: () {
-                    // Navigate to Lokasi tab
-                    final berandaState = context.findAncestorStateOfType<_BerandaScreenState>();
-                    berandaState?.setState(() {
-                      berandaState._selectedIndex = 1;
-                    });
+                // Alert Deteksi Jatuh - Realtime dari Firebase
+                StreamBuilder<bool>(
+                  stream: FallDetectionService.getFallDetectionStream(),
+                  builder: (context, snapshot) {
+                    // Jika ada data dan terdeteksi jatuh
+                    if (snapshot.hasData && snapshot.data == true) {
+                      final currentTime = DateFormat('HH:mm').format(DateTime.now());
+                      
+                      return AlertCard(
+                        title: 'Deteksi Jatuh!',
+                        subtitle: 'Terdeteksi Jatuh pada $currentTime WIB',
+                        buttonText: 'Periksa Lokasi',
+                        onPressed: () {
+                          // Navigate to Lokasi tab
+                          final berandaState = context.findAncestorStateOfType<_BerandaScreenState>();
+                          berandaState?.setState(() {
+                            berandaState._selectedIndex = 1;
+                          });
+                        },
+                      );
+                    }
+                    
+                    // Jika sedang loading
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return Card(
+                        color: Colors.grey.shade100,
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Row(
+                            children: [
+                              const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                                'Memuat status deteksi jatuh...',
+                                style: TextStyle(
+                                  color: AppColors.textSecondary,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }
+                    
+                    // Jika error
+                    if (snapshot.hasError) {
+                      return Card(
+                        color: Colors.orange.shade50,
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.warning, color: Colors.orange),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  'Tidak dapat terhubung ke sensor',
+                                  style: TextStyle(
+                                    color: Colors.orange.shade900,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }
+                    
+                    // Jika tidak terdeteksi jatuh, tampilkan status aman
+                    return Card(
+                      color: Colors.green.shade50,
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Row(
+                          children: [
+                            Icon(Icons.check_circle, color: AppColors.success),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                'Status Aman - Tidak ada deteksi jatuh',
+                                style: TextStyle(
+                                  color: AppColors.success,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
                   },
                 ),
                 
