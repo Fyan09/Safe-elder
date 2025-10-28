@@ -5,8 +5,16 @@ import 'utils/colors.dart';
 import 'services/obat_service.dart';
 import 'services/latihan_service.dart';
 import 'services/artikel_service.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized(); // wajib kalau main async
+
+  // Inisialisasi Firebase
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   // Initialize dummy data
   ObatService.initDummyData();
   LatihanService.initDummyData();
@@ -49,7 +57,7 @@ class SafeElderApp extends StatelessWidget {
           type: BottomNavigationBarType.fixed,
           elevation: 8,
         ),
-        cardTheme: CardTheme(
+        cardTheme: CardThemeData(
           color: AppColors.white,
           elevation: 2,
           shape: RoundedRectangleBorder(

@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "373037506513",
+    "firebase_url": "https://self-elder-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "self-elder",
+    "storage_bucket": "self-elder.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:373037506513:android:ce79d5b9317501573d8af0",
+        "android_client_info": {
+          "package_name": "com.example.safe_elder"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCOvIpckPptQzQ-3zf-jqBAEliIH44lAbw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
