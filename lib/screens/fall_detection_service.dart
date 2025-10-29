@@ -16,6 +16,28 @@ class FallDetectionService {
     });
   }
   
+  // 🟢 Stream gabungan untuk status lansia (status gerakan, durasi, lastUpdate)
+  static Stream<Map<String, dynamic>> getElderlyStatusStream() {
+    return _database
+        .child('esp32/status')
+        .onValue
+        .map((event) {
+      if (event.snapshot.value != null && event.snapshot.value is Map) {
+        final data = Map<String, dynamic>.from(event.snapshot.value as Map);
+        return {
+          'status': data['movementStatus'] ?? 'Berdiri',
+          'duration': data['durationAtLocation'] ?? '0 Menit',
+          'lastUpdate': data['lastUpdate'] ?? DateTime.now().toString(),
+        };
+      }
+      return {
+        'status': 'Berdiri',
+        'duration': '0 Menit',
+        'lastUpdate': DateTime.now().toString(),
+      };
+    });
+  }
+  
   // Get data sekali saja (tidak realtime)
   static Future<bool> getFallDetectionStatus() async {
     try {
@@ -50,8 +72,7 @@ class FallDetectionService {
       return {};
     }
   }
-  
-  // Reset status jatuh (jika diperlukan)
+
   static Future<void> resetFallDetection() async {
     try {
       await _database
@@ -61,8 +82,7 @@ class FallDetectionService {
       print('Error resetting fall detection: $e');
     }
   }
-  
-  // Get semua data ESP32 (untuk debugging)
+
   static Stream<Map<String, dynamic>> getEsp32DataStream() {
     return _database
         .child('esp32')

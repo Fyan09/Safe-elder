@@ -100,102 +100,163 @@ class _BerandaContentState extends State<_BerandaContent> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Alert Deteksi Jatuh - Realtime dari Firebase
+                // 🟢 Alert Status Lansia - REALTIME SINKRON DENGAN LOKASI
                 StreamBuilder<bool>(
                   stream: FallDetectionService.getFallDetectionStream(),
-                  builder: (context, snapshot) {
-                    // Jika ada data dan terdeteksi jatuh
-                    if (snapshot.hasData && snapshot.data == true) {
-                      final currentTime = DateFormat('HH:mm').format(DateTime.now());
-                      
-                      return AlertCard(
-                        title: 'Deteksi Jatuh!',
-                        subtitle: 'Terdeteksi Jatuh pada $currentTime WIB',
-                        buttonText: 'Periksa Lokasi',
-                        onPressed: () {
-                          // Navigate to Lokasi tab
-                          final berandaState = context.findAncestorStateOfType<_BerandaScreenState>();
-                          berandaState?.setState(() {
-                            berandaState._selectedIndex = 1;
-                          });
-                        },
-                      );
-                    }
-                    
-                    // Jika sedang loading
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return Card(
-                        color: Colors.grey.shade100,
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Row(
-                            children: [
-                              const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(strokeWidth: 2),
-                              ),
-                              const SizedBox(width: 12),
-                              Text(
-                                'Memuat status deteksi jatuh...',
-                                style: TextStyle(
-                                  color: AppColors.textSecondary,
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    }
-                    
-                    // Jika error
-                    if (snapshot.hasError) {
-                      return Card(
-                        color: Colors.orange.shade50,
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Row(
-                            children: [
-                              const Icon(Icons.warning, color: Colors.orange),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Text(
-                                  'Tidak dapat terhubung ke sensor',
-                                  style: TextStyle(
-                                    color: Colors.orange.shade900,
-                                    fontSize: 14,
+                  builder: (context, fallSnapshot) {
+                    return StreamBuilder<Map<String, dynamic>>(
+                      stream: FallDetectionService.getElderlyStatusStream(),
+                      builder: (context, statusSnapshot) {
+                        final isFalling = fallSnapshot.data ?? false;
+                        final statusData = statusSnapshot.data ?? {};
+                        final movementStatus = statusData['status'] ?? "Berdiri";
+                        final currentTime = DateFormat('HH:mm').format(DateTime.now());
+                        
+                        // 🔴 Jika terdeteksi jatuh - PRIORITAS TERTINGGI
+                        if (isFalling || movementStatus.toLowerCase() == "jatuh") {
+                          return AlertCard(
+                            title: '⚠️ Deteksi Jatuh!',
+                            subtitle: 'Terdeteksi Jatuh pada $currentTime WIB',
+                            buttonText: 'Periksa Lokasi Segera',
+                            onPressed: () {
+                              final berandaState = context.findAncestorStateOfType<_BerandaScreenState>();
+                              berandaState?.setState(() {
+                                berandaState._selectedIndex = 1;
+                              });
+                            },
+                          );
+                        }
+                        
+                        // ⏳ Jika sedang loading
+                        if (fallSnapshot.connectionState == ConnectionState.waiting ||
+                            statusSnapshot.connectionState == ConnectionState.waiting) {
+                          return Card(
+                            color: Colors.grey.shade100,
+                            child: Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: Row(
+                                children: [
+                                  const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(strokeWidth: 2),
                                   ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    }
-                    
-                    // Jika tidak terdeteksi jatuh, tampilkan status aman
-                    return Card(
-                      color: Colors.green.shade50,
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Row(
-                          children: [
-                            Icon(Icons.check_circle, color: AppColors.success),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                'Status Aman - Tidak ada deteksi jatuh',
-                                style: TextStyle(
-                                  color: AppColors.success,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                                  const SizedBox(width: 12),
+                                  Text(
+                                    'Memuat status lansia...',
+                                    style: TextStyle(
+                                      color: AppColors.textSecondary,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                          ],
-                        ),
-                      ),
+                          );
+                        }
+                        
+                        // ⚠️ Jika error
+                        if (fallSnapshot.hasError || statusSnapshot.hasError) {
+                          return Card(
+                            color: Colors.orange.shade50,
+                            child: Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.warning, color: Colors.orange),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Text(
+                                      'Tidak dapat terhubung ke sensor',
+                                      style: TextStyle(
+                                        color: Colors.orange.shade900,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        }
+                        
+                        Color statusColor;
+                        IconData statusIcon;
+                        String statusText;
+                        
+                        switch (movementStatus.toLowerCase()) {
+                          case "berjalan":
+                            statusColor = Colors.green;
+                            statusIcon = Icons.directions_walk;
+                            statusText = "Lansia sedang berjalan";
+                            break;
+                          case "duduk":
+                            statusColor = Colors.orange;
+                            statusIcon = Icons.event_seat;
+                            statusText = "Lansia sedang duduk";
+                            break;
+                          case "diam":
+                            statusColor = const Color.fromARGB(255, 255, 255, 255);
+                            statusIcon = Icons.accessibility_new;
+                            statusText = "Lansia sedang diam";
+                            break;
+                          case "berdiri":
+                          default:
+                            statusColor = AppColors.success;
+                            statusIcon = Icons.accessibility;
+                            statusText = "Lansia dalam kondisi baik - Berdiri";
+                        }
+                        
+                        return Card(
+                          color: Colors.white,
+                          child: InkWell(
+                            onTap: () {
+                              // Navigate ke halaman lokasi
+                              final berandaState = context.findAncestorStateOfType<_BerandaScreenState>();
+                              berandaState?.setState(() {
+                                berandaState._selectedIndex = 1;
+                              });
+                            },
+                            child: Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: Row(
+                                children: [
+                                  Icon(statusIcon, color: statusColor, size: 28),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          statusText,
+                                          style: TextStyle(
+                                            color: statusColor,
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          'Ketuk untuk melihat lokasi detail',
+                                          style: TextStyle(
+                                            color: statusColor.withOpacity(0.7),
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Icon(
+                                    Icons.arrow_forward_ios,
+                                    size: 16,
+                                    color: statusColor,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      },
                     );
                   },
                 ),
